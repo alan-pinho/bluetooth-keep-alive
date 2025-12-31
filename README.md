@@ -88,19 +88,6 @@ App Sandbox
 
 ---
 
-## Architecture
-
-```
-BluetoothKeepAliveApp/
- ├── UI/
- ├── Bluetooth/
- ├── Services/
- ├── MenuBar/
- └── Resources/
-```
-
----
-
 ## 📄 License
 
 MIT License
