@@ -1,24 +1,128 @@
 {
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
   "configurations": [
     {
       "type": "swift",
       "request": "launch",
+      "name": "Release",
+      "configuration": "release",
+      "program": "${workspaceRoot}/.build/debug/BluetoothKeepAliveApp",
       "args": [],
-      "cwd": "${workspaceFolder:bluetooth-keep-alive}",
-      "name": "Debug bluetooth-keep-alive",
-      "target": "bluetooth-keep-alive",
+      "env": {},
+      "cwd": "${workspaceRoot}"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "name": "Debug",
       "configuration": "debug",
-      "preLaunchTask": "swift: Build Debug bluetooth-keep-alive"
+      "program": "${workspaceRoot}/.build/debug/BluetoothKeepAliveApp",
+      "args": [],
+      "env": {},
+      "cwd": "${workspaceRoot}"
     },
     {
       "type": "swift",
       "request": "launch",
       "args": [],
       "cwd": "${workspaceFolder:bluetooth-keep-alive}",
-      "name": "Release bluetooth-keep-alive",
-      "target": "bluetooth-keep-alive",
+      "name": "Debug BluetoothKeepAliveApp",
+      "target": "BluetoothKeepAliveApp",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug BluetoothKeepAliveApp"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:bluetooth-keep-alive}",
+      "name": "Release BluetoothKeepAliveApp",
+      "target": "BluetoothKeepAliveApp",
       "configuration": "release",
-      "preLaunchTask": "swift: Build Release bluetooth-keep-alive"
+      "preLaunchTask": "swift: Build Release BluetoothKeepAliveApp"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:bluetooth-keep-alive}",
+      "name": "Debug Souces/BluetoothKeepAliveApp",
+      "target": "Souces/BluetoothKeepAliveApp",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug Souces/BluetoothKeepAliveApp"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:bluetooth-keep-alive}",
+      "name": "Release Souces/BluetoothKeepAliveApp",
+      "target": "Souces/BluetoothKeepAliveApp",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release Souces/BluetoothKeepAliveApp"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:bluetooth-keep-alive}",
+      "name": "Debug TaOsso",
+      "target": "TaOsso",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug TaOsso"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:bluetooth-keep-alive}",
+      "name": "Release TaOsso",
+      "target": "TaOsso",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release TaOsso"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:bluetooth-keep-alive}",
+      "name": "Debug BluetoothKeepAliveApp.swift",
+      "target": "BluetoothKeepAliveApp.swift",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug BluetoothKeepAliveApp.swift"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:bluetooth-keep-alive}",
+      "name": "Release BluetoothKeepAliveApp.swift",
+      "target": "BluetoothKeepAliveApp.swift",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release BluetoothKeepAliveApp.swift"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:bluetooth-keep-alive}",
+      "name": "Debug BluetoothKeepAlive",
+      "target": "BluetoothKeepAlive",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug BluetoothKeepAlive"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:bluetooth-keep-alive}",
+      "name": "Release BluetoothKeepAlive",
+      "target": "BluetoothKeepAlive",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release BluetoothKeepAlive"
     }
   ]
 }
