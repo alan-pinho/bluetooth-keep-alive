@@ -18,7 +18,6 @@ struct HomeView: View {
             List(homeViewModel.devices) { device in
                 HStack{
                     Text(device.name)
-                    Text(device.type.toString())
                 }
             }
         } .navigationTitle("Despositivos")

@@ -13,7 +13,8 @@ final class HomeViewModel: NSObject, ObservableObject {
     
     @Published var devices: [BluetoothModel] = []
     private var central: CBCentralManager!
-    private let localMAC = IOBluetoothHostController.default()?.addressAsString()
+    private let localName = IOBluetoothHostController.default()?.addressAsString() ?? ""
+    
     
     override init() {
         super.init()
@@ -34,8 +35,10 @@ final class HomeViewModel: NSObject, ObservableObject {
         let paired = IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice] ?? []
         
         for device in paired {
-            // TODO: remove self device
-            if device.addressString == localMAC { continue }
+            print("Local MAC: \(localName) | Dispositivo - Nome: \(device.name ?? "Sem nome") MAC: \(device.addressString ?? "")")
+            
+            if device.isLocalMacHostUniversal { continue }
+            
             addOrUpdate(
                 BluetoothModel(
                     id: device.addressString ?? UUID().uuidString,
@@ -74,5 +77,29 @@ extension HomeViewModel: CBCentralManagerDelegate {
         if name == nil { return }
         
         devices.append(BluetoothModel(id: id, name: name ?? "Unknow", type: .ble(peripheral), rssi: rssi))
+    }
+}
+
+extension IOBluetoothDevice {
+    var isLocalMacHostUniversal: Bool {
+
+        return
+            // 1. Endereço virtual interno do macOS (sempre começa com 'd')
+            (addressString?.hasPrefix("d") == true)
+
+            // 2. Não anuncia nenhuma classe Bluetooth válida
+            && deviceClassMajor == 0
+            && deviceClassMinor == 0
+            && classOfDevice == 0
+            && serviceClassMajor == 0
+
+            // 3. Nunca reporta RSSI real
+            && rawRSSI() == 0
+
+            // 4. Nunca anuncia serviços
+            && (services?.isEmpty ?? true)
+
+            // 5. Sempre aparece como pareado
+            && isPaired()
     }
 }
