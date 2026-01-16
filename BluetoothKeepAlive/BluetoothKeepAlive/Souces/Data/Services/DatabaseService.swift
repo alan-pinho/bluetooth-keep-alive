@@ -31,9 +31,28 @@ final class DatabaseService {
 
     // MARK: - Thread-safe access
 
-    func withDatabase<T>(_ block: (OpaquePointer?) -> T) -> T {
+    private func withDatabase<T>(_ block: (OpaquePointer?) -> T) -> T {
         return queue.sync {
             block(db)
+        }
+    }
+    
+    func databaseAction<T>(query: String, actions: (OpaquePointer?) -> T) -> T?{
+        var stmt: OpaquePointer?
+        var result: T?
+        return DatabaseService.shared.withDatabase{ db in
+            if sqlite3_prepare_v2(db, query, -1, &stmt, nil) == SQLITE_OK {
+                result = actions(stmt)
+                sqlite3_step(stmt)
+            }
+
+            let rc = sqlite3_finalize(stmt)
+            
+            if rc != SQLITE_DONE {
+                fatalError("Failed to finalize query")
+            }
+            
+            return result
         }
     }
 }

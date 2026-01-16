@@ -7,18 +7,22 @@
 
 class RepositoryService<T> {
     
-    func insert(element: T) async -> Bool {
+    func insert(element: T) -> Bool {
         fatalError("Subclasses must implement the 'insert' method.")
     }
-    func delete(element: T) async -> Bool {
+    func delete(id: String) -> Bool {
         fatalError("Subclasses must implement the 'delete' method.")
     }
-    func update(element: T) async -> Bool {
+    func update(element: T) -> Bool {
         fatalError("Subclasses must implement the 'update' method.")
     }
-    func read(id: String) async -> Bool {
+    func get(id: String) -> Bool {
         fatalError("Subclasses must implement the 'update' method.")
     }
-
-    func fromData() -> T {}
+    func list() -> Array<T>? {
+        fatalError("Subclasses must implement the 'update' method.")
+    }
+    func query() -> Array<T>? {
+        fatalError("Subclasses must implement the 'update' method.")
+    }
 }
