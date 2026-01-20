@@ -17,12 +17,9 @@ class RepositoryService<T> {
         fatalError("Subclasses must implement the 'update' method.")
     }
     func get(id: String) -> Bool {
-        fatalError("Subclasses must implement the 'update' method.")
+        fatalError("Subclasses must implement the 'get' method.")
     }
     func list() -> Array<T>? {
-        fatalError("Subclasses must implement the 'update' method.")
-    }
-    func query() -> Array<T>? {
-        fatalError("Subclasses must implement the 'update' method.")
+        fatalError("Subclasses must implement the 'list' method.")
     }
 }

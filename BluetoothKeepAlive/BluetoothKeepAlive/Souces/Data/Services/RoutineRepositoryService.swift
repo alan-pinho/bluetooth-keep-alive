@@ -19,7 +19,7 @@ class RoutineRepositoryService: RepositoryService<RoutineModel> {
             """
         let date = Date.now
         
-        DatabaseService.shared.databaseAction(query: query){ (stmt) in
+        let response = DatabaseService.shared.databaseAction(query: query){ (stmt) in
             sqlite3_bind_text(stmt, 1, "\(UUID().uuid.4)", -1, nil)
             sqlite3_bind_text(stmt, 2, element.deviceId, -1, nil)
             sqlite3_bind_text(stmt, 3, element.name, -1, nil)
@@ -27,9 +27,10 @@ class RoutineRepositoryService: RepositoryService<RoutineModel> {
             sqlite3_bind_int(stmt, 4, Int32(0))
             sqlite3_bind_text(stmt, 6, date.ISO8601Format(), -1, nil)
             sqlite3_bind_text(stmt, 7, date.ISO8601Format(), -1, nil)
+            return true
         }
         
-        return true
+        return  response != nil
     }
     
     override func delete(id: String) -> Bool {
@@ -55,6 +56,7 @@ class RoutineRepositoryService: RepositoryService<RoutineModel> {
         }
         return response != nil
     }
+    
     override func list() -> Array<RoutineModel>? {
         let query = """
             SELECT *
@@ -69,14 +71,39 @@ class RoutineRepositoryService: RepositoryService<RoutineModel> {
                     deviceId: String(cString: sqlite3_column_text(stmt, 1)),
                     name: String(cString: sqlite3_column_text(stmt, 2)),
                     intervalSeconds: Int(sqlite3_column_int(stmt, 3)),
-                    isEnabled: sqlite3_column_int(stmt, 3) == 1,
-                    createdAt: ISO8601DateFormatter().date(from: String(cString: sqlite3_column_text(stmt, 4)))!,
-                    updateAt: ISO8601DateFormatter().date(from: String(cString: sqlite3_column_text(stmt, 5))))
+                    isEnabled: sqlite3_column_int(stmt, 4) == 1,
+                    createdAt: ISO8601DateFormatter().date(from: String(cString: sqlite3_column_text(stmt, 5)))!,
+                    updateAt: ISO8601DateFormatter().date(from: String(cString: sqlite3_column_text(stmt, 6))))
                 )
             }
             return list
         }
         
         return response
+    }
+    
+    override func update(element: RoutineModel) -> Bool {
+        let query = """
+        UPDATE routines
+        SET device_id=\(element.deviceId),
+        name=\(element.name),
+        interval_seconds=\(element.intervalSeconds),
+        is_enabled=\(element.isEnabled),
+        created_at=\(element.createdAt.isoFormatter),
+        update_at=\(Date.now.isoFormatter)
+        WHERE id=\(element.id);
+        """
+        
+        let response = DatabaseService.shared.databaseAction(query: query){ (stmt) in
+            sqlite3_bind_text(stmt, 1, (element.deviceId as NSString).utf8String, -1, nil)
+            sqlite3_bind_text(stmt, 2, (element.name as NSString).utf8String, -1, nil)
+            sqlite3_bind_int(stmt, 3, Int32(element.intervalSeconds))
+            sqlite3_bind_int(stmt, 4, element.isEnabled ? 1 : 0)
+            sqlite3_bind_text(stmt, 5, (element.createdAt.isoFormatter as NSString).utf8String, -1, nil)
+            sqlite3_bind_text(stmt, 6, (element.id as NSString).utf8String, -1, nil)
+            return true
+        }
+        
+        return response != nil
     }
 }
