@@ -16,7 +16,7 @@ class RepositoryService<T> {
     func update(element: T) -> Bool {
         fatalError("Subclasses must implement the 'update' method.")
     }
-    func get(id: String) -> Bool {
+    func get(id: String) throws -> T {
         fatalError("Subclasses must implement the 'get' method.")
     }
     func list() -> Array<T>? {
