@@ -30,7 +30,7 @@ class RoutineRepositoryService: RepositoryService<RoutineModel> {
             return true
         }
         
-        return  response != nil
+        return response != nil
     }
     
     override func delete(id: String) -> Bool {
@@ -45,7 +45,7 @@ class RoutineRepositoryService: RepositoryService<RoutineModel> {
         return response != nil
     }
     
-    override func get(id: String) -> Bool {
+    override func get(id: String) throws -> RoutineModel {
         let query = """
             SELECT *
             FROM routines
@@ -53,8 +53,46 @@ class RoutineRepositoryService: RepositoryService<RoutineModel> {
             """
         let response =  DatabaseService.shared.databaseAction(query: query){ (stmt) in
             sqlite3_bind_text(stmt, 1, id, -1, nil)
+            
+            return RoutineModel(
+                id: String(cString: sqlite3_column_text(stmt, 0)),
+                deviceId: String(cString: sqlite3_column_text(stmt, 1)),
+                name: String(cString: sqlite3_column_text(stmt, 2)),
+                intervalSeconds: Int(sqlite3_column_int(stmt, 3)),
+                isEnabled: sqlite3_column_int(stmt, 4) == 1,
+                createdAt: ISO8601DateFormatter().date(from: String(cString: sqlite3_column_text(stmt, 5)))!,
+                updateAt: ISO8601DateFormatter().date(from: String(cString: sqlite3_column_text(stmt, 6)))
+            )
         }
-        return response != nil
+        
+        if(response == nil){
+            throw ErrorHelpers.recordNotFound("Registro não encontrado")
+        }
+        
+        return response!
+    }
+    
+    func getByDeviceId(id: String) -> RoutineModel? {
+        let query = """
+            SELECT *
+            FROM routines r
+            WHERE r.device_id = ?;
+            """
+        let response =  DatabaseService.shared.databaseAction(query: query){ (stmt) in
+            sqlite3_bind_text(stmt, 1, id, -1, nil)
+            
+            return RoutineModel(
+                id: String(cString: sqlite3_column_text(stmt, 0)),
+                deviceId: String(cString: sqlite3_column_text(stmt, 1)),
+                name: String(cString: sqlite3_column_text(stmt, 2)),
+                intervalSeconds: Int(sqlite3_column_int(stmt, 3)),
+                isEnabled: sqlite3_column_int(stmt, 4) == 1,
+                createdAt: ISO8601DateFormatter().date(from: String(cString: sqlite3_column_text(stmt, 5)))!,
+                updateAt: ISO8601DateFormatter().date(from: String(cString: sqlite3_column_text(stmt, 6)))
+            )
+        }
+               
+        return response!
     }
     
     override func list() -> Array<RoutineModel>? {

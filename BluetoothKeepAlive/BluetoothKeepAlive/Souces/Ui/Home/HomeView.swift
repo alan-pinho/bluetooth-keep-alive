@@ -16,11 +16,30 @@ struct HomeView: View {
     var body: some View {
         NavigationView{
             List(homeViewModel.devices) { device in
-                HStack{
-                    Text(device.name)
+                Button {
+                    homeViewModel.selectedDevice = device
+                } label: {
+                    HStack {
+                        Text(device.name)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.vertical, 6)
+                    .contentShape(Rectangle())
                 }
             }
-        } .navigationTitle("Despositivos")
+            .buttonStyle(.plain)
+
+            Group{
+                if let device = homeViewModel.selectedDevice {
+                    DeviceView(device: device)
+                } else {
+                    Text("Selecione um dispositivo")
+                        .foregroundColor(.secondary)
+                }
+            }
+            .frame(alignment: .topLeading)
+        }
+        .navigationTitle("Despositivos")
     }
 }
 

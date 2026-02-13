@@ -12,6 +12,7 @@ import IOBluetooth
 final class HomeViewModel: NSObject, ObservableObject {
     
     @Published var devices: [BluetoothModel] = []
+    @Published var selectedDevice: BluetoothModel?
     private var central: CBCentralManager!
     private let localName = IOBluetoothHostController.default()?.addressAsString() ?? ""
     

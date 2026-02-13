@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		72F0B9E42F05C42900993B2D /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 72F0B9E22F05C42100993B2D /* Info.plist */; };
+		72F180F82F466E5F00B95689 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 72F180F72F466E5F00B95689 /* GRDB */; };
+		72F180FA2F466E5F00B95689 /* GRDB-dynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 72F180F92F466E5F00B95689 /* GRDB-dynamic */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +30,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				72F180F82F466E5F00B95689 /* GRDB in Frameworks */,
+				72F180FA2F466E5F00B95689 /* GRDB-dynamic in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +75,8 @@
 			);
 			name = BluetoothKeepAlive;
 			packageProductDependencies = (
+				72F180F72F466E5F00B95689 /* GRDB */,
+				72F180F92F466E5F00B95689 /* GRDB-dynamic */,
 			);
 			productName = BluetoothKeepAlive;
 			productReference = 72CADFDC2F04E4B6004DF713 /* BluetoothKeepAlive.app */;
@@ -101,6 +107,7 @@
 			mainGroup = 72CADFD32F04E4B6004DF713;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				72F180F62F466E5F00B95689 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 72CADFDD2F04E4B6004DF713 /* Products */;
@@ -359,6 +366,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		72F180F62F466E5F00B95689 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift.git";
+			requirement = {
+				branch = v7.10.0;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		72F180F72F466E5F00B95689 /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 72F180F62F466E5F00B95689 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			productName = GRDB;
+		};
+		72F180F92F466E5F00B95689 /* GRDB-dynamic */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 72F180F62F466E5F00B95689 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			productName = "GRDB-dynamic";
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 72CADFD42F04E4B6004DF713 /* Project object */;
 }
