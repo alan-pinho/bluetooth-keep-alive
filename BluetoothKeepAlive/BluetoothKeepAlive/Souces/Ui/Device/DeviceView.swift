@@ -41,8 +41,11 @@ struct DeviceView: View {
             }
         }
         .padding()
-        .task(id: device) {
-            deviceViewModel.load()
+        .task {
+            deviceViewModel.updateDevice(device)
+        }
+        .onChange(of: device.id) { _,_ in
+            deviceViewModel.updateDevice(device)
         }
     }
 }

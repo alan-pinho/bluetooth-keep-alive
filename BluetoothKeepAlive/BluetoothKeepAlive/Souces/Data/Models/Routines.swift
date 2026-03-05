@@ -8,7 +8,7 @@
 import Foundation
 import GRDB
 
-struct Routines : Codable, Identifiable, FetchableRecord, PersistableRecord {
+struct Routines : Codable, Identifiable, Equatable, FetchableRecord, PersistableRecord {
     let id : String
     let deviceId : String
     let name : String

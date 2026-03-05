@@ -45,7 +45,7 @@ class RepositoryService<T> {
     }
 
     private static func databaseFileURL() throws -> URL {
-        try databaseDirectoryURL().appendingPathComponent("seed.sqlite3", isDirectory: false)
+        try databaseDirectoryURL().appendingPathComponent("RoutinesDatabase.sqlite3", isDirectory: false)
     }
 
     // MARK: - Seeding
@@ -54,8 +54,8 @@ class RepositoryService<T> {
         let targetURL = try databaseFileURL()
 
         if !fm.fileExists(atPath: targetURL.path) {
-            guard let seedURL = Bundle.main.url(forResource: "seed", withExtension: "sqlite3") else {
-                throw NSError(domain: "RoutineRepository", code: 1, userInfo: [NSLocalizedDescriptionKey: "seed.sqlite3 não encontrado no bundle"])
+            guard let seedURL = Bundle.main.url(forResource: "RoutinesDatabase", withExtension: "sqlite3") else {
+                throw NSError(domain: "RoutineRepository", code: 1, userInfo: [NSLocalizedDescriptionKey: "RoutinesDatabase.sqlite3 does not exist in the app bundle."])
             }
             try fm.copyItem(at: seedURL, to: targetURL)
         }
@@ -69,7 +69,7 @@ class RepositoryService<T> {
             print("DB path: \(dbURL.path)")
             return try DatabaseQueue(path: dbURL.path)
         } catch {
-            fatalError("Falha ao abrir o banco de dados: \(error.localizedDescription)")
+            fatalError("Error opening database: \(error.localizedDescription)")
         }
     }
     
