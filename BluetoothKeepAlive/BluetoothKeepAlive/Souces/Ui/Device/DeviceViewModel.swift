@@ -9,26 +9,42 @@ import Foundation
 
 
 final class DeviceViewModel :  ObservableObject {
-    let routineRepository : RoutineRepositoryService = RoutineRepositoryService();
-    let deviceId : String
-    var routine : RoutineModel?
+    let routineRepository : RoutineRepository = .init();
+    let bluetoothModel : BluetoothModel
+    @Published var routine : Routines?
 
     @Published var timeInterval : Double = 0
     
-    init(deviceId: String) {
-        self.deviceId = deviceId
+    init(bluetoothModel: BluetoothModel) {
+        self.bluetoothModel = bluetoothModel
         load()
     }
     
-    func load() -> Void{
-        routine = routineRepository.getByDeviceId(id: deviceId);
+    func load() -> Void {
+        do {
+            routine = try routineRepository.get(id: bluetoothModel.id)
+        } catch {
+            routine = nil
+        }
     }
     
     func salvar() async throws -> Void{
         if timeInterval == 0 {
             throw ErrorHelpers.invalidValue(reason: "Valor de intervalo inválido! (0)")
         }
-        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        do {
+            var element = Routines.toRoutineModel(bluetoothModel)
+            element.intervalSeconds = Int(timeInterval)
+            element.updateAt = Date().isoFormatter
+            try routineRepository.insert(element: element)
+        } catch {
+            var element = try routineRepository.get(id: bluetoothModel.id)
+            if element == nil {
+                return
+            }
+            element!.intervalSeconds = Int(timeInterval)
+            try routineRepository.update(element: element!)
+        }
         print(timeInterval)
     }
 }

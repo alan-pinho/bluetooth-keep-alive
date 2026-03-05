@@ -14,7 +14,7 @@ struct DeviceView: View {
     
     init(device: BluetoothModel) {
         self.device = device
-        _deviceViewModel = StateObject(wrappedValue: DeviceViewModel(deviceId: device.id))
+        _deviceViewModel = StateObject(wrappedValue: DeviceViewModel(bluetoothModel: device))
     }
     
     var body: some View {
