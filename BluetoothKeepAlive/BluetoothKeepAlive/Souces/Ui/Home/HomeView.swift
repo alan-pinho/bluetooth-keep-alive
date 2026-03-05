@@ -33,13 +33,13 @@ struct HomeView: View {
                 if let device = homeViewModel.selectedDevice {
                     DeviceView(device: device)
                 } else {
-                    Text("Selecione um dispositivo")
+                    Text("Select a device")
                         .foregroundColor(.secondary)
                 }
             }
             .frame(alignment: .topLeading)
         }
-        .navigationTitle("Despositivos")
+        .navigationTitle("Devices")
     }
 }
 

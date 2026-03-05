@@ -13,30 +13,19 @@ final class HomeViewModel: NSObject, ObservableObject {
     
     @Published var devices: [BluetoothModel] = []
     @Published var selectedDevice: BluetoothModel?
-    private var central: CBCentralManager!
     private let localName = IOBluetoothHostController.default()?.addressAsString() ?? ""
     
     
     override init() {
         super.init()
-        central = CBCentralManager(delegate: self, queue: .main)
         loadPaired()
-    }
-    
-    func startScanning() {
-        guard central.state == .poweredOn else { return }
-        central.scanForPeripherals(withServices: nil)
-    }
-    
-    func stopScanning() {
-        central.stopScan()
     }
     
     func loadPaired() {
         let paired = IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice] ?? []
         
         for device in paired {
-            print("Local MAC: \(localName) | Dispositivo - Nome: \(device.name ?? "Sem nome") MAC: \(device.addressString ?? "")")
+            print("Local MAC: \(localName) | Device - Name: \(device.name ?? "Unknown") MAC: \(device.addressString ?? "")")
             
             if device.isLocalMacHostUniversal { continue }
             
@@ -64,9 +53,6 @@ final class HomeViewModel: NSObject, ObservableObject {
 extension HomeViewModel: CBCentralManagerDelegate {
     
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        if central.state == .poweredOn{
-            startScanning()
-        }
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
@@ -85,22 +71,13 @@ extension IOBluetoothDevice {
     var isLocalMacHostUniversal: Bool {
 
         return
-            // 1. Endereço virtual interno do macOS (sempre começa com 'd')
             (addressString?.hasPrefix("d") == true)
-
-            // 2. Não anuncia nenhuma classe Bluetooth válida
             && deviceClassMajor == 0
             && deviceClassMinor == 0
             && classOfDevice == 0
             && serviceClassMajor == 0
-
-            // 3. Nunca reporta RSSI real
             && rawRSSI() == 0
-
-            // 4. Nunca anuncia serviços
             && (services?.isEmpty ?? true)
-
-            // 5. Sempre aparece como pareado
             && isPaired()
     }
 }
