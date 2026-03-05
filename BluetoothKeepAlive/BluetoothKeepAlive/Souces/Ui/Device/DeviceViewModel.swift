@@ -23,6 +23,7 @@ final class DeviceViewModel :  ObservableObject {
     func load() -> Void {
         do {
             routine = try routineRepository.get(id: bluetoothModel.id)
+            timeInterval = 0
         } catch {
             routine = nil
         }

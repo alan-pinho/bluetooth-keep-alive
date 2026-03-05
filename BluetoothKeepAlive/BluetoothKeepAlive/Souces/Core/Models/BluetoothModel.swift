@@ -24,7 +24,11 @@ enum BTType {
 }
 
 
-struct BluetoothModel: Identifiable {
+struct BluetoothModel: Identifiable, Equatable {
+    static func == (lhs: BluetoothModel, rhs: BluetoothModel) -> Bool {
+        lhs.id == rhs.id
+    }
+    
     let id: String
     let name: String
     let type: BTType

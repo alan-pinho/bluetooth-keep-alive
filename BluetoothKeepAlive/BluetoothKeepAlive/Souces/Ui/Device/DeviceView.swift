@@ -41,6 +41,9 @@ struct DeviceView: View {
             }
         }
         .padding()
+        .task(id: device) {
+            deviceViewModel.load()
+        }
     }
 }
 
