@@ -30,6 +30,7 @@ struct DeviceView: View {
                 in: 0...3600,
                 format: .number,
             )
+            Toggle("Enabled", isOn: $deviceViewModel.isEnabled)
             Button("Save"){
                 Task{
                     do{

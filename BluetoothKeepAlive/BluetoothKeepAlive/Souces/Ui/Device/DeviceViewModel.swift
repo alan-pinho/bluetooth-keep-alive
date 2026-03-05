@@ -14,6 +14,7 @@ final class DeviceViewModel :  ObservableObject {
     
     @Published var selectedRoutine : Routines?
     @Published var timeInterval : Double = 0
+    @Published var isEnabled : Bool = false
     
     init(bluetoothModel: BluetoothModel) {
         self.bluetoothModel = bluetoothModel
@@ -33,6 +34,7 @@ final class DeviceViewModel :  ObservableObject {
                 return;
             }
             timeInterval = Double(selectedRoutine!.intervalSeconds)
+            isEnabled = selectedRoutine!.isEnabled.boolean
         } catch {
             selectedRoutine = nil
         }
@@ -41,6 +43,7 @@ final class DeviceViewModel :  ObservableObject {
     private func clearViewModel() -> Void {
         selectedRoutine = nil
         timeInterval = 0
+        isEnabled = false
     }
     
     func saveRoutine() async throws -> Void{
@@ -54,7 +57,7 @@ final class DeviceViewModel :  ObservableObject {
             try createRoutine()
             return
         }
-        try updateRoutine()
+        try updateRoutine(routine!)
         print(timeInterval)
     }
     
@@ -62,13 +65,16 @@ final class DeviceViewModel :  ObservableObject {
         var element = Routines.toRoutineModel(bluetoothModel)
         element.intervalSeconds = Int(timeInterval)
         element.updateAt = Date().isoFormatter
+        element.isEnabled = isEnabled.integer
         try routineRepository.insert(element: element)
     }
     
-    private func updateRoutine() throws -> Void {
-        var routine = try routineRepository.get(id: bluetoothModel.id)
-        routine!.intervalSeconds = Int(timeInterval)
-        routine!.updateAt = Date().isoFormatter
-        try routineRepository.update(element: routine!)
+    private func updateRoutine(_ routine: Routines) throws -> Void {
+        var updatedRoutine = routine
+        updatedRoutine.intervalSeconds = Int(timeInterval)
+        updatedRoutine.updateAt = Date().isoFormatter
+        updatedRoutine.isEnabled = isEnabled.integer
+        try routineRepository.update(element: updatedRoutine)
     }
 }
+

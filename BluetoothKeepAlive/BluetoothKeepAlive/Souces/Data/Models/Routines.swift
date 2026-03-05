@@ -12,9 +12,9 @@ struct Routines : Codable, Identifiable, Equatable, FetchableRecord, Persistable
     let id : String
     let deviceId : String
     let name : String
-    let isEnabled : Int
     let createdAt : String
     var intervalSeconds : Int
+    var isEnabled : Int
     var updateAt : String?
     
     static func toRoutineModel(_ device: BluetoothModel) -> Routines {
@@ -22,9 +22,9 @@ struct Routines : Codable, Identifiable, Equatable, FetchableRecord, Persistable
             id: device.id,
             deviceId: device.id,
             name: device.name,
-            isEnabled: 0,
             createdAt: Date().isoFormatter,
             intervalSeconds: 0,
+            isEnabled: 0,
             updateAt: nil
         )
     }
@@ -38,7 +38,4 @@ struct Routines : Codable, Identifiable, Equatable, FetchableRecord, Persistable
         static let created_at = Column(CodingKeys.createdAt)
         static let update_at = Column(CodingKeys.updateAt)
     }
-    
-    
 }
-
