@@ -25,15 +25,15 @@ struct DeviceView: View {
             Text("ID: \(device.id)")
                 .foregroundColor(.secondary)
             Stepper(
-                "Intervalo de tempo (minutos)",
+                "Time Interval (s):",
                 value: $deviceViewModel.timeInterval,
                 in: 0...3600,
                 format: .number,
             )
-            Button("Salvar"){
+            Button("Save"){
                 Task{
                     do{
-                        try await deviceViewModel.salvar()
+                        try await deviceViewModel.saveRoutine()
                     } catch {
                         showError(error as! ErrorHelpers)
                     }

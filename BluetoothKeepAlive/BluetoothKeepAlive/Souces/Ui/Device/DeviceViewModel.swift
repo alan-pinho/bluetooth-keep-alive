@@ -28,9 +28,9 @@ final class DeviceViewModel :  ObservableObject {
         }
     }
     
-    func salvar() async throws -> Void{
+    func saveRoutine() async throws -> Void{
         if timeInterval == 0 {
-            throw ErrorHelpers.invalidValue(reason: "Valor de intervalo inválido! (0)")
+            throw ErrorHelpers.invalidValue(reason: "Invalid time interval (0)")
         }
         do {
             var element = Routines.toRoutineModel(bluetoothModel)

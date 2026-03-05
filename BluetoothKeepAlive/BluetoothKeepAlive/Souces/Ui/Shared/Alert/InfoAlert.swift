@@ -9,7 +9,7 @@ import AppKit
 
 func showError (_ error: ErrorHelpers){
     let alert = NSAlert()
-    alert.messageText = NSTextField(labelWithString: "Atenção").stringValue
+    alert.messageText = NSTextField(labelWithString: "Warning").stringValue
     alert.informativeText = error.reason()
     alert.alertStyle = .warning
     alert.addButton(withTitle: "Ok")
