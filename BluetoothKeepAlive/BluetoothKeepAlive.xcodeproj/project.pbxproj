@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		72F0B9E42F05C42900993B2D /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 72F0B9E22F05C42100993B2D /* Info.plist */; };
 		72F180F82F466E5F00B95689 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 72F180F72F466E5F00B95689 /* GRDB */; };
-		72F180FA2F466E5F00B95689 /* GRDB-dynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 72F180F92F466E5F00B95689 /* GRDB-dynamic */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,7 +30,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				72F180F82F466E5F00B95689 /* GRDB in Frameworks */,
-				72F180FA2F466E5F00B95689 /* GRDB-dynamic in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -76,7 +74,6 @@
 			name = BluetoothKeepAlive;
 			packageProductDependencies = (
 				72F180F72F466E5F00B95689 /* GRDB */,
-				72F180F92F466E5F00B95689 /* GRDB-dynamic */,
 			);
 			productName = BluetoothKeepAlive;
 			productReference = 72CADFDC2F04E4B6004DF713 /* BluetoothKeepAlive.app */;
@@ -90,7 +87,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1640;
-				LastUpgradeCheck = 1640;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					72CADFDB2F04E4B6004DF713 = {
 						CreatedOnToolsVersion = 16.4;
@@ -175,6 +172,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 48LKG6S6D8;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -198,6 +196,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -237,6 +236,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 48LKG6S6D8;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -253,6 +253,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -265,9 +266,14 @@
 				CODE_SIGN_ENTITLEMENTS = BluetoothKeepAlive/BluetoothKeepAlive.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 48LKG6S6D8;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Este app usa Bluetooth para se conectar a dispositivos BLE.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Este app usa Bluetooth para se conectar a dispositivos BLE.";
@@ -309,9 +315,14 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 48LKG6S6D8;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Este app usa Bluetooth para se conectar a dispositivos BLE.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "Este app usa Bluetooth para se conectar a dispositivos BLE.";
@@ -372,8 +383,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/groue/GRDB.swift.git";
 			requirement = {
-				branch = v7.10.0;
-				kind = branch;
+				kind = exactVersion;
+				version = 7.10.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -383,11 +394,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 72F180F62F466E5F00B95689 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
 			productName = GRDB;
-		};
-		72F180F92F466E5F00B95689 /* GRDB-dynamic */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 72F180F62F466E5F00B95689 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
-			productName = "GRDB-dynamic";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
