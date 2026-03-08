@@ -8,15 +8,20 @@
 import Foundation
 import CoreBluetooth
 import IOBluetooth
+import Combine
 
 final class HomeViewModel: NSObject, ObservableObject {
     
     @Published var devices: [BluetoothModel] = []
     @Published var selectedDevice: BluetoothModel?
+    @Published var routines: [Routines] = []
     private let localName = IOBluetoothHostController.default()?.addressAsString() ?? ""
+    private let timerRoutineService: TimerRoutineService
+    private var cancellables: Set<AnyCancellable> = []
     
     
-    override init() {
+    init(timerRoutineService: TimerRoutineService) {
+        self.timerRoutineService = timerRoutineService
         super.init()
         loadPaired()
     }

@@ -11,7 +11,7 @@ import SwiftUI
 
 struct HomeView: View {
     
-    @StateObject var homeViewModel = HomeViewModel()
+    @StateObject var homeViewModel = HomeViewModel(timerRoutineService: DIService.shared.timerRoutineService)
     
     var body: some View {
         NavigationView{
@@ -28,7 +28,6 @@ struct HomeView: View {
                 }
             }
             .buttonStyle(.plain)
-
             Group{
                 if let device = homeViewModel.selectedDevice {
                     DeviceView(device: device)

@@ -10,6 +10,7 @@ enum ErrorHelpers: Error {
     case invalidValue(reason: String)
     case insetionFailed(reason: String)
     case updateFailed(reason: String)
+    case deletionFailed(reason: String)
     
     func reason() -> String {
         switch self {
@@ -20,6 +21,8 @@ enum ErrorHelpers: Error {
         case .insetionFailed(reason: let reason):
             return reason
         case .updateFailed(reason: let reason):
+            return reason
+        case .deletionFailed(reason: let reason):
             return reason
         }
     }

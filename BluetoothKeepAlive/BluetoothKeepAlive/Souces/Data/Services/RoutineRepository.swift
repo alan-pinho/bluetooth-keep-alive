@@ -14,6 +14,7 @@ class RoutineRepository : RepositoryService<Routines>{
             try dbQueue.write { db in
                 try element.insert(db)
             }
+            repositoryUpdated.send(element)
         } catch {
             throw ErrorHelpers.insetionFailed(reason: "Failed to insert routine \(error)")
         }
@@ -34,25 +35,31 @@ class RoutineRepository : RepositoryService<Routines>{
             _ = try dbQueue.write { db in
                 try element.update(db)
             }
+            repositoryUpdated.send(element)
         } catch {
             throw ErrorHelpers.updateFailed(reason: "Failed to update routine")
         }
     }
     
     override func list() throws -> Array<Routines>? {
-        try dbQueue.read { db in
-            try Routines.fetchAll(db)
+        return try dbQueue.read { db in
+            let routines = try Routines.fetchAll(db)
+            
+            for routine in routines {
+                repositoryUpdated.send(routine)
+            }
+            return routines
         }
     }
     
-    override func delete(id: String) throws -> Bool {
+    override func delete(element: Routines) throws {
         do {
             _ = try dbQueue.write { db in
-                try Routines.deleteAll(db, keys: [id])
+                try element.delete(db)
             }
-            return true
+            repositoryUpdated.send(element)
         } catch {
-            return false
+            throw ErrorHelpers.deletionFailed(reason: "Faield to delete routine")
         }
     }
 }

@@ -9,7 +9,7 @@ import Foundation
 
 
 final class DeviceViewModel :  ObservableObject {
-    let routineRepository : RoutineRepository = .init();
+    let routineRepository : RoutineRepository = DIService.shared.routineRepository
     private var bluetoothModel : BluetoothModel
     
     @Published var selectedRoutine : Routines?

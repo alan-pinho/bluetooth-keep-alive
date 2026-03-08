@@ -7,8 +7,10 @@
 
 import Foundation
 import GRDB
+import Combine
 
 class RepositoryService<T> {
+    let repositoryUpdated = PassthroughSubject<T, Never>()
     let dbQueue: DatabaseQueue
 
     init() {
@@ -76,7 +78,7 @@ class RepositoryService<T> {
     func insert(element: T) throws {
         fatalError("Subclasses must implement the 'insert' method.")
     }
-    func delete(id: String) throws -> Bool {
+    func delete(element: T) throws {
         fatalError("Subclasses must implement the 'delete' method.")
     }
     func update(element: T) throws {
