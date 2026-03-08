@@ -30,21 +30,41 @@ class TimerRoutineService {
     func addTimerFromMinutes(_ seconds: Int, _ id: String, closure: @escaping () -> Void) {
         let clampedSeconds = max(1, seconds)
         let interval = TimeInterval(clampedSeconds)
-        let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
-            // Ensure callbacks happen on the main thread if UI work is expected
-            closure()
+
+        // If a timer with this id exists, invalidate and remove it before creating a new one
+        if let existingIndex = timers.firstIndex(where: { $0.id == id }) {
+            timers[existingIndex].timer.invalidate()
+            timers.remove(at: existingIndex)
         }
-        let newTimer = TimerModel(id: id, timer: timer)
-        timers.append(newTimer)
+
+        // Always create and schedule timers on the main run loop
+        let createTimer: () -> Void = { [weak self] in
+            guard let self = self else { return }
+            let timer = Timer(timeInterval: interval, repeats: true) { _ in
+                if Thread.isMainThread {
+                    closure()
+                } else {
+                    DispatchQueue.main.async { closure() }
+                }
+            }
+            // Add to the main run loop in common modes so it continues during UI tracking
+            RunLoop.main.add(timer, forMode: .common)
+
+            let newTimer = TimerModel(id: id, timer: timer)
+            self.timers.append(newTimer)
+        }
+
+        if Thread.isMainThread {
+            createTimer()
+        } else {
+            DispatchQueue.main.async { createTimer() }
+        }
     }
     
     func invalidateTimer(_ id: String) {
-        let timerElement = timers.first(where: { $0.id == id })
-        if timerElement == nil {
-            return
-        }
-        timerElement!.timer.invalidate()
-        timers.removeAll(where: {$0.id == id})
+        guard let index = timers.firstIndex(where: { $0.id == id }) else { return }
+        timers[index].timer.invalidate()
+        timers.remove(at: index)
     }
 
     /// Invalidates and clears all timers managed by this service.
@@ -79,7 +99,7 @@ class TimerRoutineService {
     }
     
     private func startTimer(_ id: String, _ interval: Int){
-        self.addTimerFromMinutes(interval, id){
+        self.addTimerFromMinutes(interval, id) {
             print("Timer fired \(id)")
         }
     }
