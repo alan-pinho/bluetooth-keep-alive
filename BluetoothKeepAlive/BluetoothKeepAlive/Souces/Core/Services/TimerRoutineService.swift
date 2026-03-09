@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import IOBluetooth
 
 class TimerRoutineService {
     private var timers: [TimerModel] = []
@@ -100,8 +101,17 @@ class TimerRoutineService {
     
     private func startTimer(_ id: String, _ interval: Int){
         self.addTimerFromMinutes(interval, id) {
-            print("Timer fired \(id)")
+            if let device = IOBluetoothDevice(addressString: id) {
+                print("Resolved device: \(device.addressString ?? id)")
+                self.pingDevice(device)
+            } else {
+                print("Failed to resolve IOBluetoothDevice from address string: \(id)")
+            }
         }
+    }
+    
+    private func pingDevice(_ device: IOBluetoothDevice){
+        device.performSDPQuery(device)
     }
 }
 
