@@ -1,4 +1,5 @@
 {
+	LSUIElement = YES;
 	CFBundleIdentifier = "com.bluetooth-keep-alive";
-	NSBluetoothAlwaysUsageDescription = "Este app usa Bluetooth para se conectar a dispositivos BLE.";
+	"NSBluetoothAlwaysUsageDescription" = "Este app usa Bluetooth para se conectar a dispositivos BLE.";
 }
