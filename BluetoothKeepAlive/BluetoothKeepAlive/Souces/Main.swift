@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppKit
+import ServiceManagement
 
 @main
 struct BluetoothKeepAliveApp: App {
@@ -31,6 +32,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         createStatusItem()
+        applyStartupSetting()
     }
 
     func createStatusItem() {
@@ -135,6 +137,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func quit() {
         NSApp.terminate(nil)
+    }
+
+    private func applyStartupSetting() {
+        do {
+            let setting = try DIService.shared.settingRepository.get(id: "start-with-system")
+            let shouldStartWithSystem = setting?.isEnabled.boolean ?? false
+            let startupService = SMAppService.mainApp
+
+            if shouldStartWithSystem {
+                if startupService.status != .enabled && startupService.status != .requiresApproval {
+                    try startupService.register()
+                }
+                return
+            }
+
+            if startupService.status == .enabled || startupService.status == .requiresApproval {
+                try startupService.unregister()
+            }
+        } catch {
+            print("Failed to apply startup setting: \(error.localizedDescription)")
+        }
     }
 }
 

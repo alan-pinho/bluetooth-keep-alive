@@ -7,6 +7,7 @@
 
 import Foundation
 import AppKit
+import ServiceManagement
 
 final class SettingsViewModel: ObservableObject {
     let settingRepository: SettingRepository
@@ -37,7 +38,7 @@ final class SettingsViewModel: ObservableObject {
     
     func updateStartWithSystem(_ isEnabled: Bool) throws {
         previousStartWithSystemValue = startWithSystemEnabled
-        startWithSystemEnabled = isEnabled
+        try configureSystemStartup(isEnabled)
         
         do {
             let setting = try settingRepository.get(id: startWithSystemSettingId)
@@ -60,9 +61,30 @@ final class SettingsViewModel: ObservableObject {
                 isEnabled: isEnabled.integer
             )
             try settingRepository.update(element: updatedSetting)
+            startWithSystemEnabled = isEnabled
         } catch {
+            try? configureSystemStartup(previousStartWithSystemValue)
             startWithSystemEnabled = previousStartWithSystemValue
             throw ErrorHelpers.updateFailed(reason: "Failed to save app startup setting")
+        }
+    }
+
+    private func configureSystemStartup(_ isEnabled: Bool) throws {
+        do {
+            let startupService = SMAppService.mainApp
+            
+            if isEnabled {
+                if startupService.status != .enabled && startupService.status != .requiresApproval {
+                    try startupService.register()
+                }
+                return
+            }
+
+            if startupService.status == .enabled || startupService.status == .requiresApproval {
+                try startupService.unregister()
+            }
+        } catch {
+            throw ErrorHelpers.updateFailed(reason: "Failed to update macOS startup configuration")
         }
     }
     
