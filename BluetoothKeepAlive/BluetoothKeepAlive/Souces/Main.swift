@@ -14,7 +14,7 @@ struct BluetoothKeepAliveApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
-        Settings {
+        WindowGroup {
             EmptyView()
         }
     }
@@ -23,7 +23,8 @@ struct BluetoothKeepAliveApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
 
     var statusItem: NSStatusItem!
-    var window: NSWindow?
+    var homeWindow: NSWindow?
+    var settingWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
 
@@ -87,30 +88,49 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func openWindow() {
 
-        if window == nil {
+        if homeWindow == nil {
 
             let view = HomeView()
             let screenSize = NSScreen.main?.frame.size ?? CGSize(width: 800, height: 600)
 
-            window = NSWindow(
+            homeWindow = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: screenSize.width/2, height: screenSize.height/2),
                 styleMask: [.titled, .closable, .resizable],
                 backing: .buffered,
                 defer: false
             )
 
-            window?.center()
-            window?.title = "Bluetooth Keep Alive"
-            window?.contentView = NSHostingView(rootView: view)
-            window?.delegate = self
+            homeWindow?.center()
+            homeWindow?.title = "Bluetooth Keep Alive"
+            homeWindow?.contentView = NSHostingView(rootView: view)
+            homeWindow?.delegate = self
         }
-
-        window?.makeKeyAndOrderFront(nil)
+        
+        homeWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc func openSettings() {
-        print("settings")
+        if settingWindow == nil {
+
+            let view = SettingsView()
+            let screenSize = NSScreen.main?.frame.size ?? CGSize(width: 800, height: 600)
+
+            settingWindow = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: screenSize.width/2, height: screenSize.height/2),
+                styleMask: [.titled, .closable, .resizable],
+                backing: .buffered,
+                defer: false
+            )
+
+            settingWindow?.center()
+            settingWindow?.title = "Settings"
+            settingWindow?.contentView = NSHostingView(rootView: view)
+            settingWindow?.delegate = self
+        }
+        
+        settingWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc func quit() {
