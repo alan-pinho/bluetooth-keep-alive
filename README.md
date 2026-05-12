@@ -1,93 +1,136 @@
 # Bluetooth Keep Alive (macOS)
 
-**Bluetooth Keep Alive** is a macOS application designed to keep Bluetooth devices continuously connected and responsive by automatically maintaining and restoring their connections.
+A menu-bar app that keeps paired Bluetooth devices awake by pinging them on a
+schedule. Lives in the menu bar, has no Dock icon, and is meant to run in the
+background — including at login.
 
-It supports both **Bluetooth Low Energy (BLE)** devices and **classic Bluetooth (paired devices)**, providing a unified interface to monitor, reconnect, and manage Bluetooth connections in real time.
+It targets the case where macOS aggressively idles Bluetooth links (audio
+headsets dropping out, paired peripherals going to sleep faster than you want)
+and works around it by poking the device on a per-routine interval.
 
 ---
 
 ## Features
 
-* Scan and list **Bluetooth Low Energy (BLE)** devices
-* Load and manage **classic Bluetooth paired devices**
-* Unified device list (BLE + Classic)
-* Automatic reconnection / keep-alive routines
-* Real-time RSSI monitoring
-* Menu bar support (background operation)
-* macOS-native SwiftUI interface
-* Safe, sandboxed and code-signed execution
+- **Per-device routines** — set an interval (seconds) and toggle on/off for any
+  paired Bluetooth device.
+- **Connection-aware state machine** — every routine sits in one of three
+  states: *disabled* (off), *dormant* (device currently disconnected, no
+  pings sent), *active* (connected, being pinged on schedule). Status badges
+  in the Home list reflect this live.
+- **Two keep-alive strategies** with auto-detection and per-device override:
+  - **SDP query** — issues `IOBluetoothDevice.performSDPQuery` (works for most
+    classic peripherals).
+  - **Audio blip** — for audio devices that ignore SDP (most headsets and
+    speakers do): keeps an `AVAudioEngine` warm and schedules a 200ms
+    zero-PCM buffer per tick, which is enough to keep the A2DP/HFP session
+    alive *as long as the device is the system's default output*.
+- **Snooze** — pause all routines from the menu (15 min / 30 min / 1 h), with
+  automatic resume.
+- **Event log** — every ping result, connect/disconnect, dormant-skip and
+  snooze-skip is recorded per routine in SQLite. Surfaced today as "last
+  successful ping" and "disconnects this session" in the device view.
+- **Start at login** — optional, via `SMAppService.mainApp` so the routine
+  engine boots without opening any window.
+- **Sandboxed** — only the Bluetooth device entitlement is granted; no
+  network access, no file access beyond the app container.
 
 ---
 
-## How It Works
+## Architecture (short version)
 
-Bluetooth Keep Alive uses:
+- **SwiftUI + AppKit hybrid.** `@main` is an empty SwiftUI `Settings` scene
+  (so SwiftUI doesn't auto-open a window); the `AppDelegate` builds the
+  `NSStatusItem` and drives all windows via `NSHostingView`.
+- **GRDB / SQLite** for persistence, with versioned migrations (`v1_baseline`,
+  `v2_routine_events`, `v3_routine_keep_alive_strategy`).
+- **CoreBluetooth** for BLE scan/discovery; **IOBluetooth** for classic paired
+  devices and connect/disconnect notifications.
 
-* **CoreBluetooth** to scan and manage BLE devices
-* **IOBluetooth** to load and reconnect classic paired devices
-* A unified device model to present both device types in one list
-* Periodic timers to automatically restore dropped connections
+See [`CLAUDE.md`](CLAUDE.md) for the deeper architecture notes (DI graph,
+state store, pinger abstraction).
 
-This ensures Bluetooth devices remain active, responsive and stable.
+### Current limitations
+
+- BLE devices are **listed** in the Home screen but BLE keep-alive is not
+  implemented yet — the pinger registry only ships a classic-Bluetooth
+  implementation today.
+- The audio-blip strategy needs the device to be the active audio output for
+  the silence to reach it.
 
 ---
 
-## Screens
+## Requirements
 
-* Home screen shows all available Bluetooth devices
-* Devices are marked as:
-
-  * **BLE**
-  * **Classic (Paired)**
-* Context actions allow manual reconnection and keep-alive triggering
-
----
-
-## Permissions
-
-The app requires Bluetooth access:
-
-`Info.plist`
-
-```xml
-NSBluetoothAlwaysUsageDescription
-```
-
-Capabilities:
-
-```
-App Sandbox
-  ✔ Bluetooth
-  ✔ Outgoing Connections (Client)
-```
+- macOS 15.5 or newer (deployment target)
+- Xcode 17 or newer
+- Apple Developer account (for code signing — even for local builds)
 
 ---
 
 ## Build & Run
 
-### Requirements
+The project keeps `DEVELOPMENT_TEAM` blank so the repo isn't tied to any one
+account. Two ways to build:
 
-* macOS 13+ (Ventura or newer recommended)
-* Xcode 15+
-* Apple Developer account (for signing)
+**Xcode:** open `BluetoothKeepAlive/BluetoothKeepAlive.xcodeproj`, set your
+team under *Target → Signing & Capabilities*, then ⌘R.
 
-### Run
+**CLI:**
 
-1. Open the project in Xcode
-2. Select your signing team
-3. Press **⌘ R**
+```sh
+xcodebuild \
+    -project BluetoothKeepAlive/BluetoothKeepAlive.xcodeproj \
+    -scheme BluetoothKeepAlive \
+    -configuration Debug \
+    DEVELOPMENT_TEAM=<your-team-id> \
+    build
+```
 
----
-
-## Use Cases
-
-* Prevent Bluetooth devices from sleeping
-* Maintain serial BT connections (Arduino, ESP32, etc)
-* Keep headsets and audio devices responsive
-* Stabilize Bluetooth automation workflows
+> There is no test target — `xcodebuild test` will fail.
 
 ---
 
-## 📄 License
+## Packaging a release `.dmg`
 
-MIT License
+```sh
+DEVELOPMENT_TEAM=<your-team-id> ./scripts/make-dmg.sh
+```
+
+What the script does:
+
+1. Builds a universal Release binary (`arm64` + `x86_64`).
+2. Re-signs the bundle with **only** the entitlements declared in
+   `BluetoothKeepAliveRelease.entitlements` (strips the
+   `get-task-allow` / `network.client` entitlements the Apple Development
+   profile injects automatically).
+3. Wraps the `.app` + a drag-to-`/Applications` shortcut into a
+   compressed `.dmg` under `dist/`, versioned from
+   `CFBundleShortVersionString`.
+
+The output is signed with Apple Development, not Developer ID, and is **not
+notarized**. Recipients on another Mac will need to right-click → *Open* once,
+or run:
+
+```sh
+xattr -d com.apple.quarantine /Applications/BluetoothKeepAlive.app
+```
+
+For a clean Gatekeeper experience, switch the signing identity to a
+Developer ID Application certificate and add a `notarytool submit` +
+`stapler staple` step.
+
+---
+
+## Use cases
+
+- Keep Bluetooth headphones / speakers from idling out mid-listen.
+- Keep paired controllers and peripherals responsive on long sessions.
+- Stabilise classic-Bluetooth automation flows where macOS idles links faster
+  than your peripheral can re-establish them.
+
+---
+
+## License
+
+MIT (see [`LICENSE`](LICENSE) if present).
