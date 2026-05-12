@@ -1,5 +1,8 @@
 # Bluetooth Keep Alive (macOS)
 
+[![Version](https://img.shields.io/badge/version-0.9.1-blue?style=flat-square&logo=apple&logoColor=white)](https://github.com/alan-pinho/bluetooth-keep-alive/releases/tag/v0.9.1)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=flat-square&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/alan.pinho)
+
 A menu-bar app that keeps paired Bluetooth devices awake by pinging them on a
 schedule. Lives in the menu bar, has no Dock icon, and is meant to run in the
 background — including at login.
