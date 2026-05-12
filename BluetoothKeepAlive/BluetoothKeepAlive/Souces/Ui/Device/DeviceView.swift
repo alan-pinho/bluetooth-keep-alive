@@ -38,7 +38,7 @@ struct DeviceView: View {
                     do {
                         try await deviceViewModel.saveRoutine()
                     } catch {
-                        showError(error as! ErrorHelpers)
+                        showError(error)
                     }
                 }
             }

@@ -7,9 +7,9 @@
 
 import AppKit
 
-func showError (_ error: ErrorHelpers){
+func showError(_ error: ErrorHelpers) {
     let alert = NSAlert()
-    alert.messageText = NSTextField(labelWithString: "Warning").stringValue
+    alert.messageText = "Warning"
     alert.informativeText = error.reason()
     alert.alertStyle = .warning
     alert.addButton(withTitle: "Ok")
@@ -22,4 +22,15 @@ func showError (_ error: ErrorHelpers){
     } else {
         alert.runModal()
     }
+}
+
+/// Catch-all overload for `catch { showError(error) }`. Unwraps ErrorHelpers
+/// when possible; otherwise surfaces `localizedDescription` under a generic
+/// updateFailed category so the user still gets the reason string.
+func showError(_ error: Error) {
+    if let helper = error as? ErrorHelpers {
+        showError(helper)
+        return
+    }
+    showError(.updateFailed(reason: error.localizedDescription))
 }

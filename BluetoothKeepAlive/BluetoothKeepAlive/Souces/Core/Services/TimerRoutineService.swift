@@ -41,7 +41,11 @@ class TimerRoutineService {
             self.snoozeSink()
             try self.startTimers()
         } catch {
-            showError(ErrorHelpers.recordNotFound("Failed to start timers"))
+            // Bootstrap runs from applicationDidFinishLaunching with no NSWindow yet,
+            // so a modal alert here would block launch behind an actionless dialog.
+            // Log it and let the app come up; routines just won't fire until the user
+            // creates/edits one, which goes through the repository's own error path.
+            print("TimerRoutineService bootstrap failed: \(error.localizedDescription)")
         }
     }
 
