@@ -91,7 +91,13 @@ class TimerRoutineService {
     }
 
     private func startTimers() throws {
-        _ = try routineRepository.list()
+        let routines = try routineRepository.list() ?? []
+        for routine in routines {
+            strategyOverrides[routine.id] = routine.keepAliveStrategy
+            if routine.isEnabled.boolean {
+                startTimer(routine.id, routine.intervalSeconds)
+            }
+        }
     }
 
     private func timerSink() {

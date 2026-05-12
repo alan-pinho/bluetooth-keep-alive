@@ -14,10 +14,11 @@ struct BluetoothKeepAliveApp: App {
 
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    // SwiftUI.Settings (not WindowGroup) so SwiftUI does not auto-open a window at launch.
+    // The menu-bar app drives its own NSWindows via AppDelegate. Qualified to disambiguate
+    // from the local `Settings` GRDB record.
     var body: some Scene {
-        WindowGroup {
-            EmptyView()
-        }
+        SwiftUI.Settings { EmptyView() }
     }
 }
 

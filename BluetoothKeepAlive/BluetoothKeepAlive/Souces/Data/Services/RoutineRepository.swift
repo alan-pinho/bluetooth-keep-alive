@@ -42,13 +42,12 @@ class RoutineRepository : RepositoryService<Routines>{
     }
     
     override func list() throws -> Array<Routines>? {
+        // Fetch outside any broadcast — GRDB serialized queues are not reentrant, so we
+        // can't synchronously notify subscribers (which may call back into list()/get()) from
+        // inside dbQueue.read. Callers iterate the returned list themselves when they need
+        // per-row side effects.
         return try dbQueue.read { db in
-            let routines = try Routines.fetchAll(db)
-
-            for routine in routines {
-                repositoryUpdated.send(routine)
-            }
-            return routines
+            try Routines.fetchAll(db)
         }
     }
     
