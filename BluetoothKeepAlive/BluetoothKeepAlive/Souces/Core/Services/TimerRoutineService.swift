@@ -2,22 +2,39 @@
 //  TimerRoutineService.swift
 //  BluetoothKeepAlive
 //
-//  Created by Alan Pinho on 05/03/26.
-//
 
 import Foundation
 import Combine
-import IOBluetooth
 
 class TimerRoutineService {
     private var timers: [TimerModel] = []
     private var cancellables: Set<AnyCancellable> = []
     private let routineRepository: RoutineRepository
+    private let pingerRegistry: PingerRegistry
+    private let stateStore: RoutineStateStore
+    private let eventRepository: RoutineEventRepository
+    private let snoozeService: SnoozeService
 
-    init(routineRepository: RoutineRepository) {
+    /// Tracks which routines have already logged a dormantSkip since they last became dormant.
+    private var dormantSkipLogged: Set<String> = []
+
+    /// Tracks routines for which we already logged a snoozeSkip during the current snooze window.
+    private var snoozeSkipLogged: Set<String> = []
+
+    init(routineRepository: RoutineRepository,
+         pingerRegistry: PingerRegistry,
+         stateStore: RoutineStateStore,
+         eventRepository: RoutineEventRepository,
+         snoozeService: SnoozeService) {
         self.routineRepository = routineRepository
+        self.pingerRegistry = pingerRegistry
+        self.stateStore = stateStore
+        self.eventRepository = eventRepository
+        self.snoozeService = snoozeService
         do {
             self.timerSink()
+            self.transitionSink()
+            self.snoozeSink()
             try self.startTimers()
         } catch {
             showError(ErrorHelpers.recordNotFound("Failed to start timers"))
@@ -25,20 +42,15 @@ class TimerRoutineService {
     }
 
     /// Adds a repeating timer that fires every `seconds` seconds and calls `closure`.
-    /// - Parameters:
-    ///   - seconds: The interval in seconds between firings. Values <= 0 will be treated as 1 second.
-    ///   - closure: The closure to invoke when the timer fires.
     func addTimerFromMinutes(_ seconds: Int, _ id: String, closure: @escaping () -> Void) {
         let clampedSeconds = max(1, seconds)
         let interval = TimeInterval(clampedSeconds)
 
-        // If a timer with this id exists, invalidate and remove it before creating a new one
         if let existingIndex = timers.firstIndex(where: { $0.id == id }) {
             timers[existingIndex].timer.invalidate()
             timers.remove(at: existingIndex)
         }
 
-        // Always create and schedule timers on the main run loop
         let createTimer: () -> Void = { [weak self] in
             guard let self = self else { return }
             let timer = Timer(timeInterval: interval, repeats: true) { _ in
@@ -48,7 +60,6 @@ class TimerRoutineService {
                     DispatchQueue.main.async { closure() }
                 }
             }
-            // Add to the main run loop in common modes so it continues during UI tracking
             RunLoop.main.add(timer, forMode: .common)
 
             let newTimer = TimerModel(id: id, timer: timer)
@@ -61,33 +72,30 @@ class TimerRoutineService {
             DispatchQueue.main.async { createTimer() }
         }
     }
-    
+
     func invalidateTimer(_ id: String) {
         guard let index = timers.firstIndex(where: { $0.id == id }) else { return }
         timers[index].timer.invalidate()
         timers.remove(at: index)
     }
 
-    /// Invalidates and clears all timers managed by this service.
     func invalidateAll() {
         for i in timers.indices {
             timers[i].timer.invalidate()
         }
-
         timers.removeAll()
     }
-    
-    private func startTimers() throws{
+
+    private func startTimers() throws {
         _ = try routineRepository.list()
     }
-    
+
     private func timerSink() {
-        routineRepository.repositoryUpdated.sink{ update in
-            let timer = self.timers.first(where: { $0.id == update.id})
+        routineRepository.repositoryUpdated.sink { [weak self] update in
+            guard let self = self else { return }
+            let timer = self.timers.first(where: { $0.id == update.id })
             if timer == nil {
-                if !update.isEnabled.boolean {
-                    return
-                }
+                if !update.isEnabled.boolean { return }
                 self.startTimer(update.id, update.intervalSeconds)
                 return
             }
@@ -98,20 +106,73 @@ class TimerRoutineService {
             self.invalidateTimer(update.id)
         }.store(in: &cancellables)
     }
-    
-    private func startTimer(_ id: String, _ interval: Int){
-        self.addTimerFromMinutes(interval, id) {
-            if let device = IOBluetoothDevice(addressString: id) {
-                print("Resolved device: \(device.addressString ?? id)")
-                self.pingDevice(device)
-            } else {
-                print("Failed to resolve IOBluetoothDevice from address string: \(id)")
+
+    /// Fires an immediate ping when a routine transitions dormant → active,
+    /// to recover the connection faster than waiting for the next tick.
+    private func transitionSink() {
+        stateStore.transitions
+            .sink { [weak self] id, newState in
+                guard let self = self else { return }
+                switch newState {
+                case .active:
+                    self.dormantSkipLogged.remove(id)
+                    self.fireTick(for: id)
+                case .dormant, .disabled:
+                    break
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func startTimer(_ id: String, _ interval: Int) {
+        self.addTimerFromMinutes(interval, id) { [weak self] in
+            self?.fireTick(for: id)
+        }
+    }
+
+    private func fireTick(for id: String) {
+        guard let pinger = pingerRegistry.classic else { return }
+
+        if snoozeService.isPaused() {
+            if !snoozeSkipLogged.contains(id) {
+                eventRepository.log(.snoozeSkip, routineId: id)
+                snoozeSkipLogged.insert(id)
+            }
+            return
+        }
+        snoozeSkipLogged.remove(id)
+
+        switch stateStore.state(for: id) {
+        case .disabled:
+            return
+        case .dormant:
+            if !dormantSkipLogged.contains(id) {
+                eventRepository.log(.dormantSkip, routineId: id)
+                dormantSkipLogged.insert(id)
+            }
+            return
+        case .active:
+            dormantSkipLogged.remove(id)
+            let method = pinger.keepAliveMethodLabel(deviceId: id)
+            switch pinger.ping(deviceId: id) {
+            case .ok:
+                eventRepository.log(.pingOk, routineId: id, message: method)
+            case .failed(let reason):
+                eventRepository.log(.pingFailed, routineId: id, message: reason)
+            case .skippedDormant, .skippedSnooze:
+                break
             }
         }
     }
-    
-    private func pingDevice(_ device: IOBluetoothDevice){
-        device.performSDPQuery(device)
+
+    /// When snooze ends, reset the snooze rate-limit set so the next tick can log again
+    /// if the user re-snoozes later.
+    private func snoozeSink() {
+        snoozeService.$snoozedUntil
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] until in
+                if until == nil { self?.snoozeSkipLogged.removeAll() }
+            }
+            .store(in: &cancellables)
     }
 }
-

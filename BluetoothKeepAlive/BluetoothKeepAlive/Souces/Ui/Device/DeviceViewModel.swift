@@ -2,74 +2,125 @@
 //  DeviceViewModel.swift
 //  BluetoothKeepAlive
 //
-//  Created by Alan Pinho on 10/02/26.
-//
 
 import Foundation
+import Combine
 
+final class DeviceViewModel: ObservableObject {
 
-final class DeviceViewModel :  ObservableObject {
-    let routineRepository : RoutineRepository = DIService.shared.routineRepository
-    private var bluetoothModel : BluetoothModel
-    
-    @Published var selectedRoutine : Routines?
-    @Published var timeInterval : Double = 0
-    @Published var isEnabled : Bool = false
-    
+    let routineRepository: RoutineRepository = DIService.shared.routineRepository
+    private let stateStore: RoutineStateStore = DIService.shared.routineStateStore
+    private let eventRepository: RoutineEventRepository = DIService.shared.routineEventRepository
+
+    private var bluetoothModel: BluetoothModel
+    private var cancellables: Set<AnyCancellable> = []
+    private let sessionStart: Date = Date()
+
+    @Published var selectedRoutine: Routines?
+    @Published var timeInterval: Double = 0
+    @Published var isEnabled: Bool = false
+    @Published var runtimeState: RoutineRuntimeState = .disabled
+    @Published var lastPingAt: Date?
+    @Published var sessionDisconnects: Int = 0
+    @Published var keepAliveMethod: String?
+
     init(bluetoothModel: BluetoothModel) {
         self.bluetoothModel = bluetoothModel
         load()
+        bindStateStore()
     }
 
     func updateDevice(_ bluetoothModel: BluetoothModel) {
         self.bluetoothModel = bluetoothModel
         load()
     }
-    
-    func load() -> Void {
+
+    func load() {
         clearViewModel()
+        keepAliveMethod = DIService.shared.pingerRegistry.classic?.keepAliveMethodLabel(deviceId: bluetoothModel.id)
         do {
             selectedRoutine = try routineRepository.get(id: bluetoothModel.id)
-            if (selectedRoutine == nil) {
-                return;
+            if selectedRoutine == nil {
+                runtimeState = .disabled
+                return
             }
             timeInterval = Double(selectedRoutine!.intervalSeconds)
             isEnabled = selectedRoutine!.isEnabled.boolean
+            runtimeState = stateStore.state(for: bluetoothModel.id)
+            refreshStats()
         } catch {
             selectedRoutine = nil
         }
     }
-    
-    private func clearViewModel() -> Void {
+
+    private func bindStateStore() {
+        stateStore.$states
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] states in
+                guard let self = self else { return }
+                self.runtimeState = states[self.bluetoothModel.id] ?? .disabled
+            }
+            .store(in: &cancellables)
+
+        stateStore.transitions
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] id, state in
+                guard let self = self, id == self.bluetoothModel.id else { return }
+                if state == .dormant {
+                    self.sessionDisconnects += 1
+                }
+                if state == .active {
+                    self.refreshStats()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refreshStats() {
+        if let event = eventRepository.lastSuccess(routineId: bluetoothModel.id) {
+            lastPingAt = ISO8601DateFormatter.parse(event.timestamp)
+        } else {
+            lastPingAt = nil
+        }
+        sessionDisconnects = eventRepository.disconnectsSince(
+            routineId: bluetoothModel.id,
+            since: sessionStart
+        )
+    }
+
+    private func clearViewModel() {
         selectedRoutine = nil
         timeInterval = 0
         isEnabled = false
+        runtimeState = .disabled
+        lastPingAt = nil
+        sessionDisconnects = 0
+        keepAliveMethod = nil
     }
-    
-    func saveRoutine() async throws -> Void{
+
+    func saveRoutine() async throws {
         if timeInterval == 0 {
             throw ErrorHelpers.invalidValue(reason: "Invalid time interval (0)")
         }
-        
+
         let routine = try routineRepository.get(id: bluetoothModel.id)
-        
+
         if routine == nil {
             try createRoutine()
             return
         }
         try updateRoutine(routine!)
-        print(timeInterval)
     }
-    
-    private func createRoutine() throws -> Void {
+
+    private func createRoutine() throws {
         var element = Routines.toRoutineModel(bluetoothModel)
         element.intervalSeconds = Int(timeInterval)
         element.updateAt = Date().isoFormatter
         element.isEnabled = isEnabled.integer
         try routineRepository.insert(element: element)
     }
-    
-    private func updateRoutine(_ routine: Routines) throws -> Void {
+
+    private func updateRoutine(_ routine: Routines) throws {
         var updatedRoutine = routine
         updatedRoutine.intervalSeconds = Int(timeInterval)
         updatedRoutine.updateAt = Date().isoFormatter
@@ -78,3 +129,10 @@ final class DeviceViewModel :  ObservableObject {
     }
 }
 
+private extension ISO8601DateFormatter {
+    static func parse(_ string: String) -> Date? {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f.date(from: string)
+    }
+}

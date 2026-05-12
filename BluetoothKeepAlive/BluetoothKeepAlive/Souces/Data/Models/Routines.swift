@@ -16,7 +16,7 @@ struct Routines : Codable, Identifiable, Equatable, FetchableRecord, Persistable
     var intervalSeconds : Int
     var isEnabled : Int
     var updateAt : String?
-    
+
     static func toRoutineModel(_ device: BluetoothModel) -> Routines {
         return Routines(
             id: device.id,
@@ -28,7 +28,7 @@ struct Routines : Codable, Identifiable, Equatable, FetchableRecord, Persistable
             updateAt: nil
         )
     }
-    
+
     enum Columns {
         static let id = Column(CodingKeys.id)
         static let device_id = Column(CodingKeys.deviceId)

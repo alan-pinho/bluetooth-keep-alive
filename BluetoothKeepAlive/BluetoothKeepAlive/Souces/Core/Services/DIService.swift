@@ -10,5 +10,29 @@ class DIService {
 
     lazy var routineRepository = RoutineRepository()
     lazy var settingRepository = SettingRepository()
-    lazy var timerRoutineService = TimerRoutineService(routineRepository: DIService.shared.routineRepository)
+    lazy var routineEventRepository = RoutineEventRepository()
+
+    lazy var pingerRegistry: PingerRegistry = {
+        let registry = PingerRegistry()
+        registry.register(ClassicBluetoothPinger())
+        return registry
+    }()
+
+    lazy var routineStateStore = RoutineStateStore(
+        routineRepository: DIService.shared.routineRepository,
+        pingerRegistry: DIService.shared.pingerRegistry,
+        eventRepository: DIService.shared.routineEventRepository
+    )
+
+    lazy var snoozeService = SnoozeService(
+        settingRepository: DIService.shared.settingRepository
+    )
+
+    lazy var timerRoutineService = TimerRoutineService(
+        routineRepository: DIService.shared.routineRepository,
+        pingerRegistry: DIService.shared.pingerRegistry,
+        stateStore: DIService.shared.routineStateStore,
+        eventRepository: DIService.shared.routineEventRepository,
+        snoozeService: DIService.shared.snoozeService
+    )
 }

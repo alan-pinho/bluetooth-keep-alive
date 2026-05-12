@@ -2,8 +2,6 @@
 //  HomeViewModel.swift
 //  BluetoothKeepAlive
 //
-//  Created by Alan Pinho on 31/12/25.
-//
 
 import Foundation
 import CoreBluetooth
@@ -11,29 +9,32 @@ import IOBluetooth
 import Combine
 
 final class HomeViewModel: NSObject, ObservableObject {
-    
+
     @Published var devices: [BluetoothModel] = []
     @Published var selectedDevice: BluetoothModel?
     @Published var routines: [Routines] = []
+    @Published var routineStates: [String: RoutineRuntimeState] = [:]
+
     private let localName = IOBluetoothHostController.default()?.addressAsString() ?? ""
     private let timerRoutineService: TimerRoutineService
+    private let stateStore: RoutineStateStore
     private var cancellables: Set<AnyCancellable> = []
-    
-    
-    init(timerRoutineService: TimerRoutineService) {
+
+    init(timerRoutineService: TimerRoutineService,
+         stateStore: RoutineStateStore) {
         self.timerRoutineService = timerRoutineService
+        self.stateStore = stateStore
         super.init()
         loadPaired()
+        bindStateStore()
     }
-    
+
     func loadPaired() {
         let paired = IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice] ?? []
-        
+
         for device in paired {
-            print("Local MAC: \(localName) | Device - Name: \(device.name ?? "Unknown") MAC: \(device.addressString ?? "")")
-            
             if device.isLocalMacHostUniversal { continue }
-            
+
             addOrUpdate(
                 BluetoothModel(
                     id: device.addressString ?? UUID().uuidString,
@@ -44,7 +45,18 @@ final class HomeViewModel: NSObject, ObservableObject {
             )
         }
     }
-    
+
+    private func bindStateStore() {
+        stateStore.$states
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.routineStates = $0 }
+            .store(in: &cancellables)
+    }
+
+    func routineState(for deviceId: String) -> RoutineRuntimeState? {
+        routineStates[deviceId]
+    }
+
     private func addOrUpdate(_ newDevice: BluetoothModel) {
         if let index = devices.firstIndex(where: { $0.id == newDevice.id }) {
             devices[index] = newDevice
@@ -52,22 +64,21 @@ final class HomeViewModel: NSObject, ObservableObject {
             devices.append(newDevice)
         }
     }
-    
 }
 
 extension HomeViewModel: CBCentralManagerDelegate {
-    
+
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
     }
-    
+
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         let id = peripheral.identifier.uuidString
         let name = peripheral.name
         let rssi = RSSI.intValue
-        
+
         if devices.contains(where: { $0.id == id }) { return }
         if name == nil { return }
-        
+
         devices.append(BluetoothModel(id: id, name: name ?? "Unknow", type: .ble(peripheral), rssi: rssi))
     }
 }

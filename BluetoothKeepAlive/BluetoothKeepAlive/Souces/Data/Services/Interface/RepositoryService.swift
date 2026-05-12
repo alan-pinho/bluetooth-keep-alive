@@ -69,10 +69,18 @@ class RepositoryService<T> {
             try ensureSeedCopied()
             let dbURL = try databaseFileURL()
             print("DB path: \(dbURL.path)")
-            return try DatabaseQueue(path: dbURL.path)
+            let queue = try DatabaseQueue(path: dbURL.path)
+            try runMigrations(on: queue)
+            return queue
         } catch {
             fatalError("Error opening database: \(error.localizedDescription)")
         }
+    }
+
+    private static func runMigrations(on queue: DatabaseQueue) throws {
+        var migrator = DatabaseMigrator()
+        DatabaseMigrations.register(in: &migrator)
+        try migrator.migrate(queue)
     }
     
     func insert(element: T) throws {

@@ -44,7 +44,7 @@ class RoutineRepository : RepositoryService<Routines>{
     override func list() throws -> Array<Routines>? {
         return try dbQueue.read { db in
             let routines = try Routines.fetchAll(db)
-            
+
             for routine in routines {
                 repositoryUpdated.send(routine)
             }

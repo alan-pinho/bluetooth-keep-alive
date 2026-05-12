@@ -2,8 +2,6 @@
 //  DeviceView.swift
 //  BluetoothKeepAlive
 //
-//  Created by Alan Pinho on 20/01/26.
-//
 
 import Foundation
 import SwiftUI
@@ -11,12 +9,12 @@ import SwiftUI
 struct DeviceView: View {
     let device: BluetoothModel
     @StateObject private var deviceViewModel: DeviceViewModel
-    
+
     init(device: BluetoothModel) {
         self.device = device
         _deviceViewModel = StateObject(wrappedValue: DeviceViewModel(bluetoothModel: device))
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(device.name)
@@ -24,6 +22,9 @@ struct DeviceView: View {
 
             Text("ID: \(device.id)")
                 .foregroundColor(.secondary)
+
+            statusSection
+
             Stepper(
                 "Time Interval (s):",
                 value: $deviceViewModel.timeInterval,
@@ -31,9 +32,9 @@ struct DeviceView: View {
                 format: .number,
             )
             Toggle("Enabled", isOn: $deviceViewModel.isEnabled)
-            Button("Save"){
-                Task{
-                    do{
+            Button("Save") {
+                Task {
+                    do {
                         try await deviceViewModel.saveRoutine()
                     } catch {
                         showError(error as! ErrorHelpers)
@@ -45,9 +46,39 @@ struct DeviceView: View {
         .task {
             deviceViewModel.updateDevice(device)
         }
-        .onChange(of: device.id) { _,_ in
+        .onChange(of: device.id) { _, _ in
             deviceViewModel.updateDevice(device)
         }
+    }
+
+    @ViewBuilder
+    private var statusSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                RoutineStatusBadge(state: deviceViewModel.runtimeState, showLabel: true)
+            }
+            if let method = deviceViewModel.keepAliveMethod {
+                Text("Keep-alive method: \(method)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                if method == "Audio blip" {
+                    Text("Tip: make sure this device is the active audio output.")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+            if let lastPing = deviceViewModel.lastPingAt {
+                Text("Last successful ping: \(lastPing, format: .relative(presentation: .named))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            if deviceViewModel.sessionDisconnects > 0 {
+                Text("Disconnects this session: \(deviceViewModel.sessionDisconnects)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 

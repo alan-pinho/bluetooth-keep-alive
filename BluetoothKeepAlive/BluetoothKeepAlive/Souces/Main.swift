@@ -33,6 +33,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         createStatusItem()
         applyStartupSetting()
+        bootRoutineEngine()
+    }
+
+    /// Ensure the timer + connection observers come up at launch, even when no window is opened
+    /// (e.g. when launched headless by SMAppService at login).
+    private func bootRoutineEngine() {
+        _ = DIService.shared.timerRoutineService
+        DispatchQueue.global(qos: .utility).async {
+            DIService.shared.routineEventRepository.prune()
+        }
     }
 
     func createStatusItem() {
@@ -49,13 +59,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             button.target = self
         }
 
-        statusItem.menu = createMenu()
+        let menu = createMenu()
+        menu.delegate = self
+        statusItem.menu = menu
     }
 
     func createMenu() -> NSMenu {
 
         let menu = NSMenu()
-        
+
         let configureItem = NSMenuItem(
             title: "Configure paired devices",
             action: #selector(openWindow),
@@ -70,6 +82,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
         settingsItem.image = NSImage(systemSymbolName: "gear", accessibilityDescription: nil)
 
+        let pauseItem = NSMenuItem(
+            title: "Pause routines",
+            action: nil,
+            keyEquivalent: ""
+        )
+        pauseItem.image = NSImage(systemSymbolName: "pause.circle", accessibilityDescription: nil)
+        pauseItem.submenu = createPauseSubmenu()
+
         let quitItem = NSMenuItem(
             title: "Quit",
             action: #selector(quit),
@@ -78,11 +98,78 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(configureItem)
         menu.addItem(settingsItem)
+        menu.addItem(pauseItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(quitItem)
 
         return menu
     }
+
+    private func createPauseSubmenu() -> NSMenu {
+        let submenu = NSMenu()
+        submenu.autoenablesItems = false
+
+        let options: [(String, Int)] = [
+            ("15 minutes", 15),
+            ("30 minutes", 30),
+            ("1 hour", 60),
+        ]
+        for (label, minutes) in options {
+            let item = NSMenuItem(
+                title: label,
+                action: #selector(snoozeAction(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.tag = minutes
+            submenu.addItem(item)
+        }
+
+        submenu.addItem(NSMenuItem.separator())
+
+        let resumeItem = NSMenuItem(
+            title: "Resume",
+            action: #selector(resumeAction),
+            keyEquivalent: ""
+        )
+        resumeItem.target = self
+        resumeItem.identifier = NSUserInterfaceItemIdentifier("resume")
+        submenu.addItem(resumeItem)
+
+        return submenu
+    }
+
+    @objc private func snoozeAction(_ sender: NSMenuItem) {
+        DIService.shared.snoozeService.snooze(minutes: sender.tag)
+    }
+
+    @objc private func resumeAction() {
+        DIService.shared.snoozeService.resume()
+    }
+
+    private func updatePauseSubmenu(_ submenu: NSMenu) {
+        let isPaused = DIService.shared.snoozeService.isPaused()
+        for item in submenu.items {
+            if item.identifier?.rawValue == "resume" {
+                if let until = DIService.shared.snoozeService.snoozedUntil {
+                    item.title = "Resume (paused until \(Self.timeFormatter.string(from: until)))"
+                    item.isEnabled = true
+                } else {
+                    item.title = "Resume"
+                    item.isEnabled = false
+                }
+            } else if item.tag > 0 {
+                item.state = isPaused ? .off : .off
+            }
+        }
+    }
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        f.dateStyle = .none
+        return f
+    }()
 
     @objc func toggleMenu() {
         statusItem.button?.performClick(nil)
@@ -168,4 +255,20 @@ extension AppDelegate: NSWindowDelegate {
         return false
     }
 
+}
+
+extension AppDelegate: NSMenuDelegate {
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard let pauseItem = menu.items.first(where: { $0.title == "Pause routines" || $0.title.hasPrefix("Pause routines") }),
+              let submenu = pauseItem.submenu else { return }
+
+        if DIService.shared.snoozeService.isPaused(),
+           let until = DIService.shared.snoozeService.snoozedUntil {
+            pauseItem.title = "Pause routines (until \(Self.timeFormatter.string(from: until)))"
+        } else {
+            pauseItem.title = "Pause routines"
+        }
+        updatePauseSubmenu(submenu)
+    }
 }
