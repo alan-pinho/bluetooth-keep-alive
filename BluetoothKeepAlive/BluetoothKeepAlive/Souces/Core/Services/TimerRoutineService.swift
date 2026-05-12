@@ -21,6 +21,10 @@ class TimerRoutineService {
     /// Tracks routines for which we already logged a snoozeSkip during the current snooze window.
     private var snoozeSkipLogged: Set<String> = []
 
+    /// Per-routine keep-alive strategy override. Refreshed on every repositoryUpdated event
+    /// so each tick can resolve the override without hitting the DB.
+    private var strategyOverrides: [String: KeepAliveStrategyKind] = [:]
+
     init(routineRepository: RoutineRepository,
          pingerRegistry: PingerRegistry,
          stateStore: RoutineStateStore,
@@ -93,6 +97,8 @@ class TimerRoutineService {
     private func timerSink() {
         routineRepository.repositoryUpdated.sink { [weak self] update in
             guard let self = self else { return }
+            self.strategyOverrides[update.id] = update.keepAliveStrategy
+
             let timer = self.timers.first(where: { $0.id == update.id })
             if timer == nil {
                 if !update.isEnabled.boolean { return }
@@ -153,8 +159,9 @@ class TimerRoutineService {
             return
         case .active:
             dormantSkipLogged.remove(id)
-            let method = pinger.keepAliveMethodLabel(deviceId: id)
-            switch pinger.ping(deviceId: id) {
+            let override = strategyOverrides[id]
+            let method = pinger.keepAliveMethodLabel(deviceId: id, strategyOverride: override)
+            switch pinger.ping(deviceId: id, strategyOverride: override) {
             case .ok:
                 eventRepository.log(.pingOk, routineId: id, message: method)
             case .failed(let reason):

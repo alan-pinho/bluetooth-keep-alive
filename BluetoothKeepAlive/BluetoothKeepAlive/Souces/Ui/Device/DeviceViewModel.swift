@@ -23,6 +23,8 @@ final class DeviceViewModel: ObservableObject {
     @Published var lastPingAt: Date?
     @Published var sessionDisconnects: Int = 0
     @Published var keepAliveMethod: String?
+    @Published var detectedMethod: String?
+    @Published var strategyOverride: KeepAliveStrategyKind?
 
     init(bluetoothModel: BluetoothModel) {
         self.bluetoothModel = bluetoothModel
@@ -37,15 +39,19 @@ final class DeviceViewModel: ObservableObject {
 
     func load() {
         clearViewModel()
-        keepAliveMethod = DIService.shared.pingerRegistry.classic?.keepAliveMethodLabel(deviceId: bluetoothModel.id)
+        let pinger = DIService.shared.pingerRegistry.classic
+        detectedMethod = pinger?.keepAliveMethodLabel(deviceId: bluetoothModel.id, strategyOverride: nil)
         do {
             selectedRoutine = try routineRepository.get(id: bluetoothModel.id)
             if selectedRoutine == nil {
                 runtimeState = .disabled
+                keepAliveMethod = detectedMethod
                 return
             }
             timeInterval = Double(selectedRoutine!.intervalSeconds)
             isEnabled = selectedRoutine!.isEnabled.boolean
+            strategyOverride = selectedRoutine!.keepAliveStrategy
+            keepAliveMethod = pinger?.keepAliveMethodLabel(deviceId: bluetoothModel.id, strategyOverride: strategyOverride)
             runtimeState = stateStore.state(for: bluetoothModel.id)
             refreshStats()
         } catch {
@@ -74,6 +80,15 @@ final class DeviceViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+
+        $strategyOverride
+            .dropFirst()
+            .sink { [weak self] override in
+                guard let self = self else { return }
+                self.keepAliveMethod = DIService.shared.pingerRegistry.classic?
+                    .keepAliveMethodLabel(deviceId: self.bluetoothModel.id, strategyOverride: override)
+            }
+            .store(in: &cancellables)
     }
 
     private func refreshStats() {
@@ -96,6 +111,8 @@ final class DeviceViewModel: ObservableObject {
         lastPingAt = nil
         sessionDisconnects = 0
         keepAliveMethod = nil
+        detectedMethod = nil
+        strategyOverride = nil
     }
 
     func saveRoutine() async throws {
@@ -117,6 +134,7 @@ final class DeviceViewModel: ObservableObject {
         element.intervalSeconds = Int(timeInterval)
         element.updateAt = Date().isoFormatter
         element.isEnabled = isEnabled.integer
+        element.keepAliveStrategy = strategyOverride
         try routineRepository.insert(element: element)
     }
 
@@ -125,6 +143,7 @@ final class DeviceViewModel: ObservableObject {
         updatedRoutine.intervalSeconds = Int(timeInterval)
         updatedRoutine.updateAt = Date().isoFormatter
         updatedRoutine.isEnabled = isEnabled.integer
+        updatedRoutine.keepAliveStrategy = strategyOverride
         try routineRepository.update(element: updatedRoutine)
     }
 }

@@ -32,6 +32,7 @@ struct DeviceView: View {
                 format: .number,
             )
             Toggle("Enabled", isOn: $deviceViewModel.isEnabled)
+            strategyPicker
             Button("Save") {
                 Task {
                     do {
@@ -49,6 +50,18 @@ struct DeviceView: View {
         .onChange(of: device.id) { _, _ in
             deviceViewModel.updateDevice(device)
         }
+    }
+
+    @ViewBuilder
+    private var strategyPicker: some View {
+        Picker("Keep-alive method", selection: $deviceViewModel.strategyOverride) {
+            Text("Auto\(deviceViewModel.detectedMethod.map { " (detected: \($0))" } ?? "")")
+                .tag(KeepAliveStrategyKind?.none)
+            ForEach(KeepAliveStrategyKind.allCases, id: \.self) { kind in
+                Text(kind.label).tag(KeepAliveStrategyKind?.some(kind))
+            }
+        }
+        .pickerStyle(.radioGroup)
     }
 
     @ViewBuilder

@@ -45,5 +45,11 @@ enum DatabaseMigrations {
                 columns: ["routineId", "timestamp"]
             )
         }
+
+        migrator.registerMigration("v3_routine_keep_alive_strategy") { db in
+            try db.alter(table: "routines") { t in
+                t.add(column: "keepAliveStrategy", .text)
+            }
+        }
     }
 }

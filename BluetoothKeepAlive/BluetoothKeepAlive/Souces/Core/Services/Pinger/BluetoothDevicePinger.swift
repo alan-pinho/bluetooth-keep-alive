@@ -26,8 +26,8 @@ protocol BluetoothDevicePinger: AnyObject {
     var transport: RoutineTransport { get }
 
     func isConnected(deviceId: String) -> Bool
-    func ping(deviceId: String) -> PingOutcome
-    func keepAliveMethodLabel(deviceId: String) -> String?
+    func ping(deviceId: String, strategyOverride: KeepAliveStrategyKind?) -> PingOutcome
+    func keepAliveMethodLabel(deviceId: String, strategyOverride: KeepAliveStrategyKind?) -> String?
 
     func startObserving(_ handler: @escaping (String, ConnectionChange) -> Void)
     func updateRegisteredAddresses(_ addresses: Set<String>)
@@ -35,5 +35,5 @@ protocol BluetoothDevicePinger: AnyObject {
 }
 
 extension BluetoothDevicePinger {
-    func keepAliveMethodLabel(deviceId: String) -> String? { nil }
+    func keepAliveMethodLabel(deviceId: String, strategyOverride: KeepAliveStrategyKind?) -> String? { nil }
 }

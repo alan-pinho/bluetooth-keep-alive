@@ -30,27 +30,33 @@ final class ClassicBluetoothPinger: NSObject, BluetoothDevicePinger {
         IOBluetoothDevice(addressString: deviceId)?.isConnected() ?? false
     }
 
-    func ping(deviceId: String) -> PingOutcome {
+    func ping(deviceId: String, strategyOverride: KeepAliveStrategyKind?) -> PingOutcome {
         guard let device = IOBluetoothDevice(addressString: deviceId) else {
             return .failed("Could not resolve IOBluetoothDevice for \(deviceId)")
         }
-        return strategy(for: device).perform(on: device)
+        return strategy(for: device, override: strategyOverride).perform(on: device)
     }
 
-    func keepAliveMethodLabel(deviceId: String) -> String? {
+    func keepAliveMethodLabel(deviceId: String, strategyOverride: KeepAliveStrategyKind?) -> String? {
         guard let device = IOBluetoothDevice(addressString: deviceId) else { return nil }
-        return strategy(for: device).label
+        return strategy(for: device, override: strategyOverride).label
     }
 
-    /// Audio devices (`deviceClassMajor == kBluetoothDeviceClassMajorAudio`) don't reliably
-    /// respond to SDP queries — many headsets ignore them outright. For those, sending a
-    /// short silent PCM buffer to the default audio output keeps the A2DP session alive
-    /// (provided the device is currently the active output).
-    private func strategy(for device: IOBluetoothDevice) -> KeepAliveStrategy {
-        if device.deviceClassMajor == UInt32(kBluetoothDeviceClassMajorAudio) {
-            return audioStrategy
+    /// Override (if present) wins. Otherwise we auto-detect: audio devices
+    /// (`deviceClassMajor == kBluetoothDeviceClassMajorAudio`) don't reliably respond to SDP
+    /// queries — many headsets ignore them outright. For those, sending a short silent PCM
+    /// buffer to the default audio output keeps the A2DP session alive (provided the device
+    /// is currently the active output).
+    private func strategy(for device: IOBluetoothDevice, override: KeepAliveStrategyKind?) -> KeepAliveStrategy {
+        switch override {
+        case .sdp: return sdpStrategy
+        case .audio: return audioStrategy
+        case .none:
+            if device.deviceClassMajor == UInt32(kBluetoothDeviceClassMajorAudio) {
+                return audioStrategy
+            }
+            return sdpStrategy
         }
-        return sdpStrategy
     }
 
     func startObserving(_ handler: @escaping (String, ConnectionChange) -> Void) {

@@ -16,6 +16,7 @@ struct Routines : Codable, Identifiable, Equatable, FetchableRecord, Persistable
     var intervalSeconds : Int
     var isEnabled : Int
     var updateAt : String?
+    var keepAliveStrategy : KeepAliveStrategyKind?
 
     static func toRoutineModel(_ device: BluetoothModel) -> Routines {
         return Routines(
@@ -25,7 +26,8 @@ struct Routines : Codable, Identifiable, Equatable, FetchableRecord, Persistable
             createdAt: Date().isoFormatter,
             intervalSeconds: 0,
             isEnabled: 0,
-            updateAt: nil
+            updateAt: nil,
+            keepAliveStrategy: nil
         )
     }
 
@@ -37,5 +39,6 @@ struct Routines : Codable, Identifiable, Equatable, FetchableRecord, Persistable
         static let is_enabled = Column(CodingKeys.isEnabled)
         static let created_at = Column(CodingKeys.createdAt)
         static let update_at = Column(CodingKeys.updateAt)
+        static let keep_alive_strategy = Column(CodingKeys.keepAliveStrategy)
     }
 }
