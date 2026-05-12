@@ -3,9 +3,10 @@
 //  BluetoothKeepAlive
 //
 //  Keeps audio devices (headphones, speakers) awake by routing a short
-//  silent PCM buffer to the system's default output. As long as the
-//  audio device is the active output, the buffered silence is enough to
-//  keep the A2DP / HFP session alive past the device's idle timeout.
+//  PCM buffer to the system's default output. The buffer carries a
+//  sub-audible low-amplitude tone (not pure zeros) because macOS' A2DP
+//  encoder suspends transmission when it detects digital silence — which
+//  some headset firmwares interpret as idle and disconnect.
 //
 
 import Foundation
@@ -21,6 +22,8 @@ final class AudioBlipStrategy: KeepAliveStrategy {
     private var silentBuffer: AVAudioPCMBuffer?
     private var started = false
     private let blipDuration: TimeInterval = 0.2
+    private let tickleFrequency: Float = 20.0     // sub-audible
+    private let tickleAmplitude: Float = 0.0001   // ~-80 dBFS, inaudible
 
     func perform(on device: IOBluetoothDevice) -> PingOutcome {
         do {
@@ -51,10 +54,24 @@ final class AudioBlipStrategy: KeepAliveStrategy {
                           userInfo: [NSLocalizedDescriptionKey: "Could not allocate PCM buffer"])
         }
         buffer.frameLength = frameCount
-        // PCM buffer memory is zero-initialized by CoreAudio, so this is already silence.
+        fillTickle(buffer: buffer, format: format)
         silentBuffer = buffer
 
         try engine.start()
         started = true
+    }
+
+    private func fillTickle(buffer: AVAudioPCMBuffer, format: AVAudioFormat) {
+        guard let channels = buffer.floatChannelData else { return }
+        let sampleRate = Float(format.sampleRate)
+        let channelCount = Int(format.channelCount)
+        let frames = Int(buffer.frameLength)
+        let twoPiFOverSR = 2.0 * .pi * tickleFrequency / sampleRate
+        for frame in 0..<frames {
+            let value = tickleAmplitude * sin(twoPiFOverSR * Float(frame))
+            for ch in 0..<channelCount {
+                channels[ch][frame] = value
+            }
+        }
     }
 }
