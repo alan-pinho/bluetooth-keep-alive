@@ -136,4 +136,11 @@ Developer ID Application certificate and add a `notarytool submit` +
 
 ## License
 
-MIT (see [`LICENSE`](LICENSE) if present).
+GPL-3.0-or-later. See [`LICENSE`](LICENSE) for the full text.
+
+Copyright © 2026 Alan Pinho. This program is free software: you can
+redistribute it and/or modify it under the terms of the GNU General
+Public License as published by the Free Software Foundation, either
+version 3 of the License, or (at your option) any later version. This
+program is distributed WITHOUT ANY WARRANTY; see the LICENSE file for
+details.
