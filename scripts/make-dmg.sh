@@ -23,12 +23,30 @@ SCHEME="BluetoothKeepAlive"
 BUILD_DIR=$(mktemp -d -t bluetooth-keep-alive-build)
 trap 'rm -rf "$BUILD_DIR"' EXIT
 
-echo "==> Building Release (universal arm64 + x86_64)"
+if [[ -z "${DEVELOPMENT_TEAM:-}" ]]; then
+    cat >&2 <<'MSG'
+DEVELOPMENT_TEAM is not set.
+
+The pbxproj keeps DEVELOPMENT_TEAM blank (so the repo isn't tied to one
+person's Apple Developer team). xcodebuild needs the team to pick a
+signing cert. Find your Team ID in Xcode > Settings > Accounts, then:
+
+  DEVELOPMENT_TEAM=ABCDE12345 ./scripts/make-dmg.sh
+
+To make it sticky in your shell, add to ~/.zshrc or similar:
+
+  export DEVELOPMENT_TEAM=ABCDE12345
+MSG
+    exit 1
+fi
+
+echo "==> Building Release (universal arm64 + x86_64, team $DEVELOPMENT_TEAM)"
 xcodebuild \
     -project "$PROJECT" \
     -scheme "$SCHEME" \
     -configuration Release \
     -derivedDataPath "$BUILD_DIR" \
+    DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
     ARCHS="arm64 x86_64" \
     ONLY_ACTIVE_ARCH=NO \
     clean build \
